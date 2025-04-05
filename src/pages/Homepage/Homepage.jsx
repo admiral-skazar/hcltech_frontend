@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { 
   Typography, 
   Grid, 
@@ -8,40 +9,35 @@ import MenuCard from '../../components/MenuCard/MenuCard';
 import LoadingSpinner from '../../components/LoadingSpinner/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
 import { menuItems as dummyMenuItems } from '../../data/menuItems';
+import { addToCart, removeFromCart } from '../../store/cartSlice';
 
 function HomePage() {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [quantities, setQuantities] = useState({});
+  const dispatch = useDispatch();
+  const cartItems = useSelector((state) => state.cart.items);
 
   useEffect(() => {
-    
-    const initialQuantities = {};
-    dummyMenuItems.forEach(item => {
-      initialQuantities[item.id] = 0;
-    });
-    
-    
     setTimeout(() => {
       setMenuItems(dummyMenuItems);
-      setQuantities(initialQuantities);
       setLoading(false);
     }, 500);
   }, []);
 
   const handleIncrement = (itemId) => {
-    setQuantities(prev => ({
-      ...prev,
-      [itemId]: (prev[itemId] || 0) + 1
-    }));
+    const item = menuItems.find(item => item.id === itemId);
+    dispatch(addToCart(item));
   };
 
   const handleDecrement = (itemId) => {
-    setQuantities(prev => ({
-      ...prev,
-      [itemId]: Math.max(0, (prev[itemId] || 0) - 1)
-    }));
+    const item = menuItems.find(item => item.id === itemId);
+    dispatch(removeFromCart(item));
+  };
+
+  const getItemQuantity = (itemId) => {
+    const cartItem = cartItems.find(item => item.id === itemId);
+    return cartItem ? cartItem.quantity : 0;
   };
 
   if (loading) return <LoadingSpinner />;
@@ -64,7 +60,7 @@ function HomePage() {
           <Grid item xs={12} sm={6} md={4} key={item.id}>
             <MenuCard
               item={item}
-              quantity={quantities[item.id]}
+              quantity={getItemQuantity(item.id)}
               onIncrement={handleIncrement}
               onDecrement={handleDecrement}
             />
@@ -76,3 +72,5 @@ function HomePage() {
 }
 
 export default HomePage;
+
+

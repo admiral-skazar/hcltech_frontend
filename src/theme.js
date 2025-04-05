@@ -3,28 +3,13 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#2c5282',
+      main: '#1976d2',
     },
     secondary: {
-      main: '#4a90e2',
-    },
-  },
-  components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-        },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-        },
-      },
+      main: '#dc004e',
     },
   },
 });
 
 export default theme;
+
