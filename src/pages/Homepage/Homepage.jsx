@@ -1,38 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  Typography, 
-  Grid, 
-  Container 
-} from '@mui/material';
-import MenuCard from '../../components/MenuCard/MenuCard';
-import LoadingSpinner from '../../components/LoadingSpinner/LoadingSpinner';
-import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
-import { menuItems as dummyMenuItems } from '../../data/menuItems';
-import { addToCart, removeFromCart } from '../../store/cartSlice';
+import { addToCart, updateQuantity, removeFromCart } from '../../store/cartSlice';
+import { fetchFoodItems } from '../../services/api';
 
 function HomePage() {
-  const [menuItems, setMenuItems] = useState([]);
+  const [foodItems, setFoodItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
   const dispatch = useDispatch();
-  const cartItems = useSelector((state) => state.cart.items);
+  const cartItems = useSelector(state => state.cart.items);
 
   useEffect(() => {
-    setTimeout(() => {
-      setMenuItems(dummyMenuItems);
-      setLoading(false);
-    }, 500);
+    loadFoodItems();
   }, []);
 
-  const handleIncrement = (itemId) => {
-    const item = menuItems.find(item => item.id === itemId);
-    dispatch(addToCart(item));
-  };
-
-  const handleDecrement = (itemId) => {
-    const item = menuItems.find(item => item.id === itemId);
-    dispatch(removeFromCart(item));
+  const loadFoodItems = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchFoodItems();
+      setFoodItems(data);
+    } catch (err) {
+      setError('Failed to load food items');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getItemQuantity = (itemId) => {
@@ -40,37 +32,56 @@ function HomePage() {
     return cartItem ? cartItem.quantity : 0;
   };
 
-  if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage message={error} />;
+  const handleQuantityChange = (item, change) => {
+    const currentQuantity = getItemQuantity(item.id);
+    const newQuantity = currentQuantity + change;
+
+    if (newQuantity === 0) {
+      dispatch(removeFromCart(item.id));
+    } else if (currentQuantity === 0 && change > 0) {
+      dispatch(addToCart(item));
+    } else {
+      dispatch(updateQuantity({ id: item.id, quantity: newQuantity }));
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="error">{error}</div>;
+  }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography 
-        variant="h3" 
-        component="h1" 
-        gutterBottom 
-        align="center"
-        sx={{ mb: 4 }}
-      >
-        Welcome to Our Restaurant
-      </Typography>
-      
-      <Grid container spacing={3}>
-        {menuItems.map((item) => (
-          <Grid item xs={12} sm={6} md={4} key={item.id}>
-            <MenuCard
-              item={item}
-              quantity={getItemQuantity(item.id)}
-              onIncrement={handleIncrement}
-              onDecrement={handleDecrement}
-            />
-          </Grid>
+    <div className="homepage">
+      <h1>Our Menu</h1>
+      <div className="menu-grid">
+        {foodItems.map(item => (
+          <div key={item.id} className="menu-item">
+            <h3>{item.foodName}</h3>
+            <div className="food-type">{item.foodType}</div>
+            <p className="price">₹{item.price}</p>
+            <div className="quantity-controls">
+              <button 
+                onClick={() => handleQuantityChange(item, -1)}
+                disabled={getItemQuantity(item.id) === 0}
+              >
+                -
+              </button>
+              <span>{getItemQuantity(item.id)}</span>
+              <button 
+                onClick={() => handleQuantityChange(item, 1)}
+              >
+                +
+              </button>
+            </div>
+          </div>
         ))}
-      </Grid>
-    </Container>
+      </div>
+    </div>
   );
 }
 
 export default HomePage;
-
 
